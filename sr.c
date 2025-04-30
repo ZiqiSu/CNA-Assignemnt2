@@ -156,11 +156,15 @@ void A_timerinterrupt(void)
     printf("----A: time out,resend packets!\n");
 
   /* Just send the oldest unacked packet in buffer*/
-    tolayer3(A, buffer[windowfirst]);
-    packets_resent++;
+  if (TRACE > 0)
+      printf("---A: resending packet %d\n", buffer[windowfirst].seqnum);
 
-    if (windowcount > 0)
-      starttimer(A,RTT);/* When the widowcount is zero start the timer if its not then not running */
+  tolayer3(A, buffer[windowfirst]);
+  packets_resent++;
+
+    
+  if (windowcount > 0)
+    starttimer(A,RTT);/* When the widowcount is zero start the timer if its not then not running */
 }       
 
 
@@ -186,7 +190,7 @@ void A_init(void)
 static int expectedseqnum; /* the sequence number expected next by the receiver */
 static int B_nextseqnum;   /* the sequence number for the next packets sent by B */
 static struct pkt recpkt[SEQSPACE]; /* store the packet received by B in recpkt*/
-static bool received[SEQSPACE]; /* make sure which packets has been received by B */
+static bool receivedarray[SEQSPACE]; /* make sure which packets has been received by B */
 
 /* called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet)
@@ -202,17 +206,17 @@ void B_input(struct pkt packet)
     packets_received++;
 
     /* deliver to receiving application */
-    if(received[packet.seqnum] == false){
-      received[packet.seqnum] = true;
+    if(receivedarray[packet.seqnum] == false){
+      receivedarray[packet.seqnum] = true;
       for (i = 0; i < 20; i++)
         recpkt[packet.seqnum].payload[i] = packet.payload[i];
     }
 
     /* send the packet into apllication layer in order */
-    while (received[expectedseqnum] == true)
+    while (receivedarray[expectedseqnum] == true)
     {
       tolayer5(B, packet.payload);
-      received[expectedseqnum] = false;
+      receivedarray[expectedseqnum] = false;
       expectedseqnum = (expectedseqnum + 1) % SEQSPACE;  /* update state variables */
     }
 
