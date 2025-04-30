@@ -1,4 +1,3 @@
-
 extern void A_init(void);
 extern void B_init(void);
 extern void A_input(struct pkt);
